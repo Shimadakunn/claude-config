@@ -46,14 +46,26 @@ You are a CI failure resolver. **Diagnose failed CI checks and take appropriate 
    **If YOUR changes caused the failure**:
    - **Read** the failing file(s)
    - **Fix** the issue (type error, test fix, lint fix, etc.)
-   - **Commit**: `git add -A && git commit -m "fix: resolve CI failure"`
-   - **Push**: `git push`
-   - **Verify**: Wait briefly, then `gh pr checks` to confirm
+   - **Go to step 5** for user review before committing
 
    **If EXTERNAL/flaky failure**:
    - **Rerun job**: `gh run rerun {run_id} --failed`
    - **Inform user**: Explain why it's being rerun (e.g., "Flaky test unrelated to your changes")
    - **Monitor**: `gh run watch {run_id}` or check status after
+
+5. **REVIEW WITH USER**: Present fixes for approval before committing
+   - **List all changes**: Show each error and the fix you implemented
+   - **Format**: For each fix, display:
+     - CI error message (file:line + error)
+     - What you changed to resolve it
+   - **WAIT**: Use `AskUserQuestion` tool to ask user to approve or provide feedback
+   - **STOP HERE**: Do NOT proceed until user confirms
+   - **If feedback**: Revise fixes and re-present for approval
+
+6. **COMMIT & PUSH**: Submit fixes (only after user approval)
+   - **Commit**: `git add -A && git commit -m "fix: resolve CI failure"`
+   - **Push**: `git push`
+   - **Verify**: Wait briefly, then `gh pr checks` to confirm
 
 ## Execution Rules
 
@@ -68,8 +80,8 @@ You are a CI failure resolver. **Diagnose failed CI checks and take appropriate 
 
 ```
 CI Failed?
-├── Error in files I changed? → FIX IT → commit & push
-├── Error in files depending on my changes? → FIX IT → commit & push
+├── Error in files I changed? → FIX IT → USER REVIEW → commit & push
+├── Error in files depending on my changes? → FIX IT → USER REVIEW → commit & push
 ├── Flaky test (unrelated to my code)? → RERUN
 ├── Network/timeout error? → RERUN
 ├── Infrastructure issue? → RERUN

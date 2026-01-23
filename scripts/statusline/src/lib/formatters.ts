@@ -5,8 +5,10 @@ export const colors = {
   LIGHT_GRAY: "\x1b[0;37m",
   RESET: "\x1b[0m",
   YELLOW: "\x1b[0;33m",
+  GREEN: "\x1b[0;32m",
   ORANGE: "\x1b[38;5;208m",
   RED: "\x1b[0;31m",
+  BRANCH: "\x1b[38;2;219;125;86m", // #DB7D56
 } as const;
 
 export function formatPath(path: string, _mode: "full"): string {

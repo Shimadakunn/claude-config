@@ -1,189 +1,89 @@
 ---
-description: "Comprehensive PR review using specialized agents"
-argument-hint: "[review-aspects]"
-allowed-tools: ["Bash", "Glob", "Grep", "Read", "Task"]
+allowed-tools: Bash(git :*), Bash(gh :*), Read, Grep, Glob, AskUserQuestion, Edit
+description: Code review a pull request
 ---
 
-# Comprehensive PR Review
+You are performing a code review on the changes in the current branch.
 
-Run a comprehensive pull request review using multiple specialized agents, each focusing on a different aspect of code quality.
+## Getting the Diff
 
-**Review Aspects (optional):** "$ARGUMENTS"
+First, get the diff between the PR branch and the base/reference branch:
 
-## Review Workflow:
+1. **Identify the PR** - Use `gh pr view --json number,baseRefName,headRefName` to get PR details.
+2. **Get the diff** - Run `git diff <base-branch>...HEAD` to see all changes in the PR.
+3. **Review file-by-file** - You can also use `gh pr diff` to get the PR diff directly.
 
-1. **Determine Review Scope**
-   - Check git status to identify changed files
-   - Parse arguments to see if user requested specific review aspects
-   - Default: Run all applicable reviews
+## Code Review Instructions
 
-2. **Available Review Aspects:**
+When reviewing the diff:
 
-   - **comments** - Analyze code comment accuracy and maintainability
-   - **tests** - Review test coverage quality and completeness
-   - **errors** - Check error handling for silent failures
-   - **types** - Analyze type design and invariants (if new types added)
-   - **code** - General code review for project guidelines
-   - **simplify** - Simplify code for clarity and maintainability
-   - **all** - Run all applicable reviews (default)
+1. **Focus on logic and correctness** - Check for bugs, edge cases, and potential issues.
+2. **Consider readability** - Is the code clear and maintainable? Does it follow best practices in this repository?
+3. **Evaluate performance** - Are there obvious performance concerns or optimizations that could be made?
+4. **Assess test coverage** - Does the repository have testing patterns? If so, are there adequate tests for these changes?
+5. **Ask clarifying questions** - Ask the user for clarification if you are unsure about the changes or need more context.
+6. **Don't be overly pedantic** - Nitpicks are fine, but only if they are relevant issues within reason.
 
-3. **Identify Changed Files**
-   - Run `git diff --name-only` to see modified files
-   - Check if PR already exists: `gh pr view`
-   - Identify file types and what reviews apply
+## Review Summary & Approval
 
-4. **Determine Applicable Reviews**
+Before posting comments to GitHub, you MUST:
 
-   Based on changes:
-   - **Always applicable**: code-reviewer (general quality)
-   - **If test files changed**: pr-test-analyzer
-   - **If comments/docs added**: comment-analyzer
-   - **If error handling changed**: silent-failure-hunter
-   - **If types added/modified**: type-design-analyzer
-   - **After passing review**: code-simplifier (polish and refine)
+1. **Display a summary** showing:
+   - PR number and title
+   - Number of files changed
+   - Total issues found (grouped by severity: critical, warning, suggestion)
+   - A table of all issues with: index, file, line(s), severity, issue description
 
-5. **Launch Review Agents**
+2. **Ask for approval** using `AskUserQuestion` with options:
+   - "Post all comments" - Post all identified issues as review comments
+   - "Select which to post" - Let user choose specific issues to post
+   - "Fix issues directly" - Fix the issues in the code without posting comments (do not commit changes)
+   - "Skip posting" - Don't post comments, just show the summary
 
-   **Sequential approach** (one at a time):
-   - Easier to understand and act on
-   - Each report is complete before next
-   - Good for interactive review
+3. **Only post after approval** - Never post comments to GitHub without explicit user confirmation
 
-   **Parallel approach** (user can request):
-   - Launch all agents simultaneously
-   - Faster for comprehensive review
-   - Results come back together
+## Output Format
 
-6. **Aggregate Results**
+In your summary output:
 
-   After agents complete, summarize:
-   - **Critical Issues** (must fix before merge)
-   - **Important Issues** (should fix)
-   - **Suggestions** (nice to have)
-   - **Positive Observations** (what's good)
+- Provide a summary overview of the general code quality.
+- Present the identified issues in a table with columns: index, severity, file:line, issue, suggestion.
+- If no issues are found, briefly state that the code meets best practices.
 
-7. **Provide Action Plan**
+## Posting Comments to GitHub
 
-   Organize findings:
-   ```markdown
-   # PR Review Summary
+After user approval, post issues as review comments directly on the PR:
 
-   ## Critical Issues (X found)
-   - [agent-name]: Issue description [file:line]
-
-   ## Important Issues (X found)
-   - [agent-name]: Issue description [file:line]
-
-   ## Suggestions (X found)
-   - [agent-name]: Suggestion [file:line]
-
-   ## Strengths
-   - What's well-done in this PR
-
-   ## Recommended Action
-   1. Fix critical issues first
-   2. Address important issues
-   3. Consider suggestions
-   4. Re-run review after fixes
+1. **Single-line comment**:
+   ```bash
+   gh api repos/{owner}/{repo}/pulls/{pr_number}/comments \
+     --method POST \
+     -f body="<comment>" \
+     -f path="<file_path>" \
+     -f commit_id="$(git rev-parse HEAD)" \
+     -F line=<line_number> \
+     -f side="RIGHT"
    ```
 
-## Usage Examples:
+2. **Multi-line comment** - Use `start_line` and `line` parameters:
+   ```bash
+   gh api repos/{owner}/{repo}/pulls/{pr_number}/comments \
+     --method POST \
+     -f body="<comment>" \
+     -f path="<file_path>" \
+     -f commit_id="$(git rev-parse HEAD)" \
+     -F start_line=<start> \
+     -F line=<end> \
+     -f side="RIGHT"
+   ```
 
-**Full review (default):**
-```
-/pr-review-toolkit:review-pr
-```
+3. **Include context** - In your comment body, include the relevant code snippet using markdown code blocks.
 
-**Specific aspects:**
-```
-/pr-review-toolkit:review-pr tests errors
-# Reviews only test coverage and error handling
+4. **Link to the PR** - After posting comments, provide the PR URL: `gh pr view --web`
 
-/pr-review-toolkit:review-pr comments
-# Reviews only code comments
+## Execution Rules
 
-/pr-review-toolkit:review-pr simplify
-# Simplifies code after passing review
-```
-
-**Parallel review:**
-```
-/pr-review-toolkit:review-pr all parallel
-# Launches all agents in parallel
-```
-
-## Agent Descriptions:
-
-**comment-analyzer**:
-- Verifies comment accuracy vs code
-- Identifies comment rot
-- Checks documentation completeness
-
-**pr-test-analyzer**:
-- Reviews behavioral test coverage
-- Identifies critical gaps
-- Evaluates test quality
-
-**silent-failure-hunter**:
-- Finds silent failures
-- Reviews catch blocks
-- Checks error logging
-
-**type-design-analyzer**:
-- Analyzes type encapsulation
-- Reviews invariant expression
-- Rates type design quality
-
-**code-reviewer**:
-- Checks CLAUDE.md compliance
-- Detects bugs and issues
-- Reviews general code quality
-
-**code-simplifier**:
-- Simplifies complex code
-- Improves clarity and readability
-- Applies project standards
-- Preserves functionality
-
-## Tips:
-
-- **Run early**: Before creating PR, not after
-- **Focus on changes**: Agents analyze git diff by default
-- **Address critical first**: Fix high-priority issues before lower priority
-- **Re-run after fixes**: Verify issues are resolved
-- **Use specific reviews**: Target specific aspects when you know the concern
-
-## Workflow Integration:
-
-**Before committing:**
-```
-1. Write code
-2. Run: /pr-review-toolkit:review-pr code errors
-3. Fix any critical issues
-4. Commit
-```
-
-**Before creating PR:**
-```
-1. Stage all changes
-2. Run: /pr-review-toolkit:review-pr all
-3. Address all critical and important issues
-4. Run specific reviews again to verify
-5. Create PR
-```
-
-**After PR feedback:**
-```
-1. Make requested changes
-2. Run targeted reviews based on feedback
-3. Verify issues are resolved
-4. Push updates
-```
-
-## Notes:
-
-- Agents run autonomously and return detailed reports
-- Each agent focuses on its specialty for deep analysis
-- Results are actionable with specific file:line references
-- Agents use appropriate models for their complexity
-- All agents available in `/agents` list
+- **MANDATORY**: Get user approval before posting any comments to GitHub
+- Be constructive, not critical - suggest improvements rather than just pointing out problems
+- Group related issues when possible
+- Prioritize actionable feedback over style nitpicks

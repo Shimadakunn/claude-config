@@ -12,7 +12,7 @@ import {
 } from "./lib/formatters";
 import type { HookInput } from "./lib/types";
 import { getUsageLimits } from "./lib/usage-limits";
-import { getBranchName, hasUncommittedChanges } from "./lib/git";
+import { getBranchName, hasUncommittedChanges, hasWorktrees, isWorktree } from "./lib/git";
 
 async function main() {
   try {
@@ -23,8 +23,12 @@ async function main() {
       defaultConfig.pathDisplayMode
     );
 
-    const branchName = await getBranchName();
-    const hasChanges = await hasUncommittedChanges();
+    const [branchName, hasChanges, inWorktree, repoHasWorktrees] = await Promise.all([
+      getBranchName(),
+      hasUncommittedChanges(),
+      isWorktree(),
+      hasWorktrees(),
+    ]);
 
     const contextData = await getContextData({
       transcriptPath: input.transcript_path,
@@ -40,9 +44,16 @@ async function main() {
     const sep = ` ${colors.GRAY}${defaultConfig.separator}${colors.LIGHT_GRAY} `;
     const parts: string[] = [];
 
+    const branchColor = inWorktree
+      ? colors.GREEN
+      : repoHasWorktrees
+        ? colors.YELLOW
+        : colors.BRANCH;
     const dirWithBranch = branchName
-      ? `${dirPath}${colors.GRAY}(${branchName}${hasChanges ? `${colors.YELLOW}*${colors.GRAY}` : ""})${colors.LIGHT_GRAY}`
-      : dirPath;
+      ? `${colors.GRAY}${dirPath}(${branchColor}${branchName}${
+          hasChanges ? `${colors.YELLOW}*` : ""
+        }${colors.GRAY})${colors.LIGHT_GRAY}`
+      : `${colors.GRAY}${dirPath}${colors.LIGHT_GRAY}`;
     parts.push(dirWithBranch);
     parts.push(sessionInfo);
 
