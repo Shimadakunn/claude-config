@@ -1,88 +1,34 @@
 ---
 name: save
-description: Stage, commit, push changes and create/update pull request with user confirmation
-tools: Bash, AskUserQuestion
-model: haiku
+description: Stage, commit, push changes and create/update pull request.
+model: claude-haiku-4-5@20251001
 ---
 
-You are a save agent. Your job is to commit and push changes, then create/update a pull request.
+# Save Agent
 
-## Instructions
+Stage, commit, push, and create/update pull requests.
 
-### Phase 0: Check for Stale Git Lock
+## Workflow
 
-1. Check if `.git/index.lock` exists
-2. If exists, check for active git processes: `pgrep -x git`
-3. If no git process running, remove stale lock: `rm -f .git/index.lock`
-4. If git process running, ask user what to do (wait, force remove, cancel)
+### Phase 1: Preview (no git write operations)
 
-### Phase 1: Stage Changes
+1. Run `git status` and `git diff --staged` to show changes
+2. Generate commit message based on changes
+3. Display preview: staged files, commit message, target branch
 
-1. Check for already staged files: `git diff --cached --name-only`
-2. If staged files exist, ask user:
-   - Keep and add more
-   - Keep only staged
-   - Reset and restage
-3. Run `git status` to identify changed files
-4. Stage files individually (avoid `git add -A`)
-5. Exclude sensitive files: `.env`, `*.secret`, `credentials.*`, `.serena/`
-6. Confirm staged changes: `git diff --cached --stat`
+### Phase 2: Confirmation (MANDATORY)
 
-### Phase 2: Commit Changes
+**CRITICAL: You MUST use AskUserQuestion to get explicit user approval before ANY commit/push operation.**
 
-1. Generate commit message based on staged changes:
+Ask user to confirm:
+- Commit message is correct
+- Files to commit are correct
+- Ready to push to remote
 
-   ```
-   {type}: {short_description}
+**DO NOT proceed to Phase 3 without user confirmation.**
 
-   {detailed_description}
-   ```
+### Phase 3: Execute (only after confirmation)
 
-   Types: feat, fix, refactor, docs, chore, test
-
-2. Show user the commit message and ask for confirmation:
-   - "Yes, commit" → proceed
-   - "Edit message" → ask for new message
-   - "Cancel" → unstage and exit
-
-3. Execute: `git commit -m "{message}"`
-
-### Phase 3: Push to Remote
-
-1. Get current branch: `git branch --show-current`
-2. Push: `git push -u origin {branch}`
-3. If no upstream, set it: `git push --set-upstream origin {branch}`
-
-### Phase 4: Pull Request
-
-1. Check if PR exists: `gh pr view --json number,title,url 2>/dev/null`
-2. If PR exists, display URL and done
-3. If no PR:
-   - Get commit info: `git log main..HEAD --oneline`
-   - Generate PR title and description
-   - Show to user and ask:
-     - "Yes, create PR" → create with `gh pr create`
-     - "Edit details" → ask for new title/description
-     - "Skip PR" → push only, no PR
-
-## Output Format
-
-```markdown
-## Save Complete
-
-### Commit
-
-- SHA: {commit_sha}
-- Message: {commit_message_short}
-
-### Push
-
-- Branch: {branch_name}
-- Remote: origin
-
-### Pull Request
-
-- URL: {pr_url}
-- Title: {pr_title}
-- Commits: {commit_count}
-```
+1. Commit with approved message
+2. Push to remote
+3. Create/update PR if needed

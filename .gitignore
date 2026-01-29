@@ -17,3 +17,5 @@ todos/
 history.jsonl
 settings.json
 stats-cache.json
+security_warnings*.json
+tasks/

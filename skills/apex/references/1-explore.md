@@ -1,101 +1,27 @@
 # Step 1: Explore
 
-**Purpose:** Gather context before implementation through parallel exploration.
+Gather context before implementation.
 
----
+## Execute
 
-## Execute Explorations in Parallel
-
-Based on `workflow_state.exploration_plan.types`, spawn agents using the **Task tool**. Run all applicable explorations **in parallel** (single message with multiple Task calls).
-
-### For `codebase` (unless `-nc` flag):
+Spawn an `explore` agent with the exploration context from Step 0:
 
 ```
-Task tool call:
-  subagent_type: "general-purpose"
-  description: "Explore codebase"
-  prompt: |
-    You are the explore-codebase agent.
-    Read and follow: ~/.claude/agents/explore/codebase.md
-
-    TASK: {workflow_state.task}
-
-    Find relevant code, patterns, architecture, and constraints.
-    Return structured findings with file:line references.
+Task(subagent_type="explore", prompt="<exploration context from step 0>")
 ```
 
-### For `docs` (if libraries detected or `-doc` flag):
+The agent will:
+- Detect which exploration types are needed (codebase, docs, web)
+- Spawn appropriate sub-agents in parallel
+- Consolidate findings
 
-```
-Task tool call:
-  subagent_type: "general-purpose"
-  description: "Explore docs"
-  prompt: |
-    You are the explore-docs agent.
-    Read and follow: ~/.claude/agents/explore/docs.md
+## Summarize
 
-    TASK: {workflow_state.task}
-    LIBRARIES: {workflow_state.exploration_plan.libraries.join(", ")}
+Display key findings:
+- Relevant files and symbols
+- API references and documentation
+- Web solutions and patterns
 
-    Find API documentation, usage patterns, and best practices.
-```
+## Next
 
-### For `web` (if URLs detected or `-web` flag):
-
-```
-Task tool call:
-  subagent_type: "general-purpose"
-  description: "Web research"
-  prompt: |
-    You are the explore-web agent.
-    Read and follow: ~/.claude/agents/explore/web.md
-
-    TASK: {workflow_state.task}
-    URLS: {workflow_state.exploration_plan.urls.join(", ") || "none - search the web"}
-
-    Find solutions, patterns, and implementation guidance.
-```
-
----
-
-## Wait and Merge Results
-
-1. Wait for all agent tasks to complete
-2. Collect outputs from each agent
-3. Merge into unified exploration output
-
-## Store in Workflow State
-
-```
-workflow_state.exploration_output = {
-  codebase: { ... },  // if ran
-  docs: { ... },      // if ran
-  web: { ... },       // if ran
-  merged_insights: "...",
-  merged_considerations: "..."
-}
-```
-
-## Display Summary
-
-```
-Step 1: Explore - Complete
-==========================
-Sources: {exploration_plan.types.join(" + ")}
-
-Key Insights:
-{merged_insights}
-
-Considerations:
-{merged_considerations}
-```
-
----
-
-## Next Step
-
-**If `-sp` flag is set:**
-- Skip planning, read: `~/.claude/skills/apex/references/3-implement.md`
-
-**Otherwise:**
-- Read and execute: `~/.claude/skills/apex/references/2-plan.md`
+Read: `~/.claude/skills/apex/references/2-plan.md`
