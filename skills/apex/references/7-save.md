@@ -1,44 +1,68 @@
-# Step 7: Save
+# Save Phase
 
-Commit and create PR.
+Commit changes, push to remote, and create PR.
 
-## Load Agent
+## Git Workflow
 
-Read the agent definition: `~/.claude/agents/save.md`
-
-Extract:
-- **instructions**: The markdown content after frontmatter
-- **model**: From frontmatter (opus/haiku/sonnet)
-
-## Execute
-
-Run save agent to:
-- Stage and commit changes
-- Push to remote
-- Create or update PR
-
-```javascript
-Task({
-  subagent_type: "save",
-  model: agent.model,
-  prompt: `
-    ${agent.instructions}
-
-    ---
-    SAVE CONTEXT:
-    Summary of changes:
-    - <list of completed subtasks>
-
-    Context for commit message:
-    - <original task description>
-  `
-})
+### 1. Stage Changes
+```bash
+git status  # Review changes
+git add <specific files>  # Stage relevant files only
 ```
 
-## Complete
+Avoid `git add -A` - be explicit about what's committed.
 
-Display final summary:
-- Completed subtasks
-- Review findings addressed
-- Commit SHA
-- PR URL (if created)
+### 2. Commit
+Create a descriptive commit message:
+```bash
+git commit -m "$(cat <<'EOF'
+<type>: <short description>
+
+<optional body explaining why>
+EOF
+)"
+```
+
+Types: `feat`, `fix`, `refactor`, `test`, `docs`, `chore`
+
+### 3. Push
+```bash
+git push -u origin <branch>
+```
+
+### 4. Create PR (if none exists)
+
+Check for existing PR:
+```bash
+gh pr list --head $(git branch --show-current)
+```
+
+Create PR if needed:
+```bash
+gh pr create --title "<title>" --body "$(cat <<'EOF'
+## Summary
+- <bullet points>
+
+## Test plan
+- [ ] <testing steps>
+
+EOF
+)"
+```
+
+## Using Save Subagent
+
+Alternatively, spawn the save subagent:
+
+```
+Task (subagent_type: save):
+Commit, push, and create PR for the changes.
+Summary: <brief description of changes>
+```
+
+## PR Guidelines
+
+- Title: Short, imperative (e.g., "Add user authentication")
+- Summary: Bullet points of key changes
+- Test plan: How to verify the changes work
+- Keep PR focused on single feature/fix

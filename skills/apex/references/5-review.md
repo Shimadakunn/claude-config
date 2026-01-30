@@ -1,56 +1,65 @@
-# Step 5: Review
+# Review Phase
 
-Code review all changes using parallel specialist reviewers.
+Comprehensive code review through parallel specialized agents.
 
-## Load Agents
+## Launch 4 Review Agents
 
-Read all review agent definitions from `~/.claude/agents/review/`:
-- `correctness.md` → instructions_correctness, model_correctness
-- `security.md` → instructions_security, model_security
-- `performance.md` → instructions_performance, model_performance
-- `maintainability.md` → instructions_maintainability, model_maintainability
+Send in a single message to run in parallel:
 
-## Execute
+```
+Task 1 (subagent_type: review-correctness):
+Review for correctness: logic errors, edge cases, error handling
+Files: [list modified files]
 
-Run 4 review agents in parallel (single message with multiple Task calls):
+Task 2 (subagent_type: review-security):
+Review for security: OWASP vulnerabilities, input validation, auth issues
+Files: [list modified files]
 
-```javascript
-Task({
-  subagent_type: "review-correctness",
-  model: model_correctness,
-  prompt: `${instructions_correctness}\n\n---\nREVIEW CONTEXT:\n<diff>`,
-  run_in_background: true
-})
-Task({
-  subagent_type: "review-security",
-  model: model_security,
-  prompt: `${instructions_security}\n\n---\nREVIEW CONTEXT:\n<diff>`,
-  run_in_background: true
-})
-Task({
-  subagent_type: "review-performance",
-  model: model_performance,
-  prompt: `${instructions_performance}\n\n---\nREVIEW CONTEXT:\n<diff>`,
-  run_in_background: true
-})
-Task({
-  subagent_type: "review-maintainability",
-  model: model_maintainability,
-  prompt: `${instructions_maintainability}\n\n---\nREVIEW CONTEXT:\n<diff>`,
-  run_in_background: true
-})
+Task 3 (subagent_type: review-performance):
+Review for performance: inefficiencies, resource usage, scalability
+Files: [list modified files]
+
+Task 4 (subagent_type: review-maintainability):
+Review for maintainability: clarity, consistency, patterns, documentation
+Files: [list modified files]
 ```
 
-## Aggregate
+## Consolidation Protocol
 
-Collect and sort issues by severity:
-1. **Critical**: Must fix before merge
-2. **Major**: Should fix before merge
-3. **Minor**: Nice to fix, not blocking
+After all reviews complete:
 
-Display aggregated findings.
+1. **Collect findings** from each agent
+2. **Deduplicate** overlapping issues
+3. **Prioritize** by severity:
+   - Critical: Security vulnerabilities, data loss risks
+   - High: Logic errors, incorrect behavior
+   - Medium: Performance issues, missing edge cases
+   - Low: Style issues, minor improvements
 
-## Next
+4. **Present summary** to user before resolving
 
-- Critical/Major issues found: read `~/.claude/skills/apex/references/6-resolve.md`
-- No blocking issues: read `~/.claude/skills/apex/references/7-save.md`
+## Review Focus Areas
+
+### Correctness
+- Logic flows correctly
+- Edge cases handled
+- Errors caught and handled
+- Types are correct
+
+### Security
+- No injection vulnerabilities
+- Input validation present
+- Auth/authz implemented correctly
+- Secrets not exposed
+
+### Performance
+- No unnecessary operations
+- Efficient algorithms
+- Resources cleaned up
+- Caching where appropriate
+
+### Maintainability
+- Code is readable
+- Follows project conventions
+- Appropriate abstraction level
+- No code duplication

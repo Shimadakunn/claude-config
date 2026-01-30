@@ -2,33 +2,20 @@
 name: save
 description: Stage, commit, push changes and create/update pull request.
 model: claude-haiku-4-5@20251001
+color: green
 ---
 
-# Save Agent
+# Workflow
 
-Stage, commit, push, and create/update pull requests.
+## Phase 1: Preview (no git write operations)
 
-## Workflow
+1. Generate a commit message based on implemented features and changed files.
+2. Display a preview: commit message, changed files.
+3. Ask user to confirm with `AskUserQuestion` tool.
+4. If user confirms, proceed to phase 2, otherwise exit
 
-### Phase 1: Preview (no git write operations)
+## Phase 2: Execute (only after confirmation)
 
-1. Run `git status` and `git diff --staged` to show changes
-2. Generate commit message based on changes
-3. Display preview: staged files, commit message, target branch
-
-### Phase 2: Confirmation (MANDATORY)
-
-**CRITICAL: You MUST use AskUserQuestion to get explicit user approval before ANY commit/push operation.**
-
-Ask user to confirm:
-- Commit message is correct
-- Files to commit are correct
-- Ready to push to remote
-
-**DO NOT proceed to Phase 3 without user confirmation.**
-
-### Phase 3: Execute (only after confirmation)
-
-1. Commit with approved message
+1. Commit the changed files with the approved commit message.
 2. Push to remote
 3. Create/update PR if needed

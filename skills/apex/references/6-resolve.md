@@ -1,55 +1,54 @@
-# Step 6: Resolve
+# Resolve Phase
 
-Fix critical and major issues from review.
+Address review findings systematically.
 
-## Load Agent
+## Prioritization
 
-Read the implement agent: `~/.claude/agents/implement.md`
-Read relevant review agents from `~/.claude/agents/review/` (based on which found issues)
+Fix issues in severity order:
 
-## Group Issues
+1. **Critical** (Security): Fix immediately, all security issues
+2. **High** (Correctness): Fix logic errors, broken functionality
+3. **Medium** (Performance): Fix inefficiencies, resource issues
+4. **Low** (Maintainability): Fix if time permits, or note for future
 
-Organize issues by file:
-- **Different files**: can fix in parallel
-- **Same file**: must fix sequentially
+## Parallelization Strategy
 
-## Execute
+Group independent fixes and resolve in parallel:
 
-Run implement agents to fix issues:
+```
+Task 1 (implement): Fix security issues
+- Issue: SQL injection in user query
+- Issue: Missing input sanitization
+Files: [affected files]
 
-```javascript
-// Parallel fixes for different files
-Task({
-  subagent_type: "implement",
-  model: implement_agent.model,
-  prompt: `${implement_agent.instructions}\n\n---\nFIX ISSUE:\nFile: A\nIssue: ...`,
-  run_in_background: true
-})
-Task({
-  subagent_type: "implement",
-  model: implement_agent.model,
-  prompt: `${implement_agent.instructions}\n\n---\nFIX ISSUE:\nFile: B\nIssue: ...`,
-  run_in_background: true
-})
+Task 2 (implement): Fix correctness issues
+- Issue: Off-by-one error in pagination
+- Issue: Missing null check
+Files: [affected files]
+
+Task 3 (implement): Fix performance issues
+- Issue: N+1 query in user list
+- Issue: Unnecessary re-renders
+Files: [affected files]
 ```
 
-## Verify
+## Resolution Guidelines
 
-Re-run relevant reviewers to verify fixes. Max 3 iterations.
+- Fix the specific issue, avoid scope creep
+- Maintain existing patterns
+- Add tests for bugs fixed
+- Document non-obvious fixes with brief comments
 
-```javascript
-Task({
-  subagent_type: "review-security",
-  model: security_agent.model,
-  prompt: `${security_agent.instructions}\n\n---\nVERIFY FIXES:\n<fixed files>`,
-  run_in_background: true
-})
-```
+## Verification
 
-If issues persist after 3 iterations:
-1. Document remaining issues
-2. Ask user whether to continue or abort
+After resolving:
+1. Re-run affected tests
+2. Spot-check critical fixes
+3. Confirm no regressions
 
-## Next
+If new issues arise during resolution, log them but complete current fixes first.
 
-Read: `~/.claude/skills/apex/references/7-save.md`
+## Skip Conditions
+
+- Skip resolution if review found no issues
+- Skip low-priority issues if explicitly deprioritized by user

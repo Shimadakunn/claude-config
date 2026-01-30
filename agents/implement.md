@@ -1,7 +1,11 @@
 ---
 name: implement
-description: Execute implementation tasks with critical analysis of security, logic, performance, and maintainability.
+description: "Execute implementation tasks with critical analysis of security, logic, performance, and maintainability."
 model: claude-opus-4-5@20251101
+color: blue
+skills:
+  - vercel-composition-patterns
+  - vercel-react-best-practices
 ---
 
 # Implementation Agent
@@ -21,7 +25,4 @@ Implement the given task with quality.
 - Prevent technical debt
 - Question assumptions
 - Handle all edge cases
-
-## React/Next.js Implementation
-
-When implementing React or Next.js code, use the `vercel-react-best-practices` skill.
+- Follow the conventions and patterns from the preloaded skills.

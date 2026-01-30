@@ -1,40 +1,49 @@
-# Step 1: Explore
+# Explore Phase
 
-Gather context before implementation.
+Gather comprehensive context through parallel exploration.
 
-## Load Agent
+## Strategy
 
-Read the agent definition: `~/.claude/agents/explore.md`
-
-Extract:
-- **instructions**: The markdown content after frontmatter
-- **model**: From frontmatter (opus/haiku/sonnet)
-
-## Execute
-
-Spawn the explore agent:
+Launch 3 parallel Task agents in a single message:
 
 ```
-Task({
-  subagent_type: "explore",
-  model: <agent.model>,
-  prompt: `
-    ${agent.instructions}
+Task 1: Codebase Exploration (subagent_type: Explore)
+- Find files related to the feature area
+- Identify existing patterns and conventions
+- Map dependencies and integrations
+- Note test patterns used
 
-    ---
-    TASK CONTEXT:
-    ${exploration_context_from_step_0}
-  `
-})
+Task 2: Documentation Lookup (subagent_type: general-purpose)
+- Use Context7 MCP to query relevant library docs
+- Focus on APIs and patterns needed for implementation
+
+Task 3: Web Research (subagent_type: general-purpose)
+- Use Exa MCP for technical research
+- Search for best practices, common pitfalls
+- Find similar implementations for reference
 ```
 
-## Summarize
+## Consolidation
 
-Display key findings:
-- Relevant files and symbols
-- API references and documentation
-- Web solutions and patterns
+After all agents complete, synthesize findings:
 
-## Next
+1. **Relevant files**: List files to read/modify with their purpose
+2. **Patterns**: Document conventions to follow
+3. **Dependencies**: Note libraries and their APIs
+4. **Risks**: Flag potential issues discovered
 
-Read: `~/.claude/skills/apex/references/2-plan.md`
+## Example
+
+For "add user authentication":
+
+```
+Agent 1 (Explore): Search for existing auth code, user models, middleware patterns
+Agent 2 (Context7): Query JWT library docs, session management
+Agent 3 (Exa): Research "secure authentication patterns Node.js 2025"
+```
+
+## Skip Conditions
+
+- Skip web research if the task is purely internal/codebase-specific
+- Skip docs lookup if no external libraries are involved
+- Skip codebase exploration only for greenfield projects

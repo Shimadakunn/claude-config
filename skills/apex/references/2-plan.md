@@ -1,34 +1,56 @@
-# Step 2: Plan
+# Plan Phase
 
-Design implementation approach based on exploration.
+Design a clear implementation approach before writing code.
 
-## Create Plan
+## Approach
 
-Break task into subtasks with:
-- Description and acceptance criteria
-- Files to modify
-- Dependencies (which subtasks must complete first)
+Use `EnterPlanMode` or spawn a Plan subagent to create the implementation design.
 
-Example:
+## Plan Structure
+
+The plan should cover:
+
+### 1. Changes Overview
+- List all files to modify/create
+- Describe the purpose of each change
+
+### 2. Implementation Order
+- Sequence changes by dependency
+- Identify which changes can be parallelized
+
+### 3. Key Decisions
+- Technology/pattern choices
+- Trade-offs considered
+- Rationale for approach
+
+### 4. Risk Assessment
+- Breaking changes
+- Edge cases to handle
+- Testing requirements
+
+## Example Plan
+
+```markdown
+## Changes
+1. `src/auth/jwt.ts` - Create JWT utility functions
+2. `src/middleware/auth.ts` - Add authentication middleware
+3. `src/routes/protected.ts` - Apply middleware to routes
+4. `src/types/user.ts` - Add User interface
+
+## Order
+- Step 1-2 can be parallelized (no dependencies)
+- Step 3 depends on Step 2
+- Step 4 can run with any step
+
+## Decisions
+- Using jose library for JWT (modern, TypeScript-native)
+- Middleware pattern matches existing route handlers
+
+## Risks
+- Token expiration handling needs edge case testing
+- Need to verify compatibility with existing session system
 ```
-Subtask 1: Create database schema
-  - Files: db/migrations/*, app/models/user.rb
-  - Dependencies: none
 
-Subtask 2: Implement API endpoints
-  - Files: app/controllers/api/v1/users_controller.rb
-  - Dependencies: Subtask 1
+## User Approval
 
-Subtask 3: Add frontend components
-  - Files: app/javascript/components/*
-  - Dependencies: Subtask 2
-```
-
-## Approval
-
-- `-np` flag: auto-approve
-- Otherwise: ask user to approve, modify, or abort
-
-## Next
-
-Read: `~/.claude/skills/apex/references/3-implement.md`
+Present the plan to the user. Use `ExitPlanMode` or ask for confirmation before proceeding to implementation.

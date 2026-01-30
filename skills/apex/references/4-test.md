@@ -1,47 +1,48 @@
-# Step 4: Test
+# Test Phase
 
-Verify implementation works.
+Verify the implementation works before formal review.
 
-## Load Agent
+## User Validation
 
-Read the agent definition: `~/.claude/agents/test.md`
+Use `AskUserQuestion` to confirm the feature works:
 
-Extract:
-- **instructions**: The markdown content after frontmatter
-- **model**: From frontmatter (opus/haiku/sonnet)
-
-## Execute
-
-Run test agent with mode based on flags:
-- `-at`: automated testing
-- Default: manual user verification
-
-```javascript
-Task({
-  subagent_type: "test",
-  model: agent.model,
-  prompt: `
-    ${agent.instructions}
-
-    ---
-    TEST CONTEXT:
-    Mode: ${flags.at ? 'automated' : 'manual'}
-
-    Changes made:
-    - <list of implemented subtasks>
-
-    Test scenarios to verify:
-    - <generated from subtask descriptions>
-  `
-})
+```
+Question: "Does the [feature] work as expected?"
+Options:
+- "Yes, works correctly" → Proceed to Review
+- "Partially works" → Ask what's broken, fix, re-test
+- "No, doesn't work" → Debug and fix issues
 ```
 
-## Handle Failures
+## Testing Approaches
 
-If tests fail:
-1. Document failing scenarios
-2. Return to implement phase or continue with warning
+### 1. Manual Testing (Default)
+Ask the user to test the feature manually:
+- Provide clear steps to test
+- Specify expected behavior
+- Ask for confirmation
 
-## Next
+### 2. Automated Testing
+If the codebase has tests, use the `test` subagent:
+```
+Task (subagent_type: test):
+- Run existing test suite
+- Verify no regressions
+- Check new functionality
+```
 
-Read: `~/.claude/skills/apex/references/5-review.md`
+### 3. Browser Testing
+For frontend changes, use `agent-browser` skill:
+- Navigate to the feature
+- Interact with UI elements
+- Capture screenshots for verification
+
+## Iteration
+
+If testing reveals issues:
+1. Identify the root cause
+2. Fix the specific issue
+3. Re-test only the affected functionality
+4. Confirm fix with user
+
+Do not proceed to Review until testing passes.

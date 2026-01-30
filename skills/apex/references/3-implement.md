@@ -1,54 +1,60 @@
-# Step 3: Implement
+# Implement Phase
 
-Execute the plan.
+Execute the plan through parallel implementation.
 
-## Load Agent
+## Parallelization Strategy
 
-Read the agent definition: `~/.claude/agents/implement.md`
+Identify independent work units and spawn parallel Task agents:
 
-Extract:
-- **instructions**: The markdown content after frontmatter
-- **model**: From frontmatter (opus/haiku/sonnet)
+### Parallel When:
+- Files have no dependencies on each other
+- Changes are to separate modules/layers
+- Tests can be written alongside implementation
 
-## Execute
+### Sequential When:
+- One file imports from another being created
+- Schema changes must precede code using them
+- Configuration must exist before dependent code
 
-Run implement agents for each subtask:
-- Independent subtasks (no shared files): parallel Task calls in a single message
-- Dependent subtasks: sequential execution
+## Task Structure
 
-```javascript
-// Parallel execution for independent subtasks
-Task({
-  subagent_type: "implement",
-  model: agent.model,
-  prompt: `${agent.instructions}\n\n---\nSUBTASK:\n${subtask_1}`,
-  run_in_background: true
-})
-Task({
-  subagent_type: "implement",
-  model: agent.model,
-  prompt: `${agent.instructions}\n\n---\nSUBTASK:\n${subtask_2}`,
-  run_in_background: true
-})
+For each parallel work unit, spawn a Task with `subagent_type: implement`:
 
-// Sequential execution for dependent subtasks
-Task({
-  subagent_type: "implement",
-  model: agent.model,
-  prompt: `${agent.instructions}\n\n---\nSUBTASK:\n${subtask_3}`
-})
+```
+Task: Implement [component name]
+Files: [list of files]
+Requirements:
+- [specific requirement 1]
+- [specific requirement 2]
+Follow patterns from: [reference file or existing code]
 ```
 
-## Rules
+## Example
 
-1. **File Conflicts**: Never assign the same file to parallel agents
-2. **Dependencies**: Execute dependent subtasks sequentially
+For authentication implementation:
 
-## Show Progress
+```
+# Send in single message for parallelization
 
-Display completion status as subtasks finish.
+Task 1 (implement): Create JWT utilities
+- File: src/auth/jwt.ts
+- Requirements: sign, verify, decode functions
+- Use jose library
 
-## Next
+Task 2 (implement): Create User types
+- File: src/types/user.ts
+- Requirements: User interface with id, email, role
 
-- `-st` flag: skip to `~/.claude/skills/apex/references/5-review.md`
-- Otherwise: read `~/.claude/skills/apex/references/4-test.md`
+Task 3 (implement): Create auth middleware
+- File: src/middleware/auth.ts
+- Requirements: Verify JWT, attach user to request
+- Depends on: jwt.ts pattern (describe pattern inline)
+```
+
+## Quality During Implementation
+
+Each implement agent should:
+- Follow existing code patterns
+- Add appropriate error handling
+- Avoid over-engineering
+- Keep changes minimal and focused
