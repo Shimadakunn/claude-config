@@ -1,7 +1,6 @@
 ---
 name: explore
 description: Explore the codebase, documentation, and web to gather context for implementation.
-disable-model-invocation: true
 user-invocable: false
 ---
 

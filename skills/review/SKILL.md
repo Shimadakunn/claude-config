@@ -1,11 +1,14 @@
 ---
-name: explore
-description: Explore the codebase, documentation, and web to gather context for implementation.
+name: review
+description: Review the code for correctness, security, performance, and maintainability.
 disable-model-invocation: true
 user-invocable: false
 context: fork
 ---
 
-Check if need to explore the codebase, documentation, or web.
+You will be given a task to review.
 
-Use the `explore-codebase`, `explore-doc`, or `explore-web` subagents in parallel to explore the codebase, documentation, or web.
+check if you can review them in parallel.
+
+create tasks for each part of the task that can be reviewed in parallel.
+and use the `review` subagent to review each part.
