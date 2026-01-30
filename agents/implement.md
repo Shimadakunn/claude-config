@@ -1,7 +1,7 @@
 ---
 name: implement
 description: Implementation agent that executes a single implementation task. Spawned by the implement phase with specific files and requirements.
-color: red
+color: blue
 skills:
   - vercel-composition-patterns
   - vercel-react-best-practices

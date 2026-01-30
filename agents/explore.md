@@ -1,7 +1,7 @@
 ---
 name: explore
 description: Exploration agent for codebase, documentation, or web research. Spawned by the explore skill with a specific exploration type.
-color: blue
+color: purple
 ---
 
 # Explore Agent

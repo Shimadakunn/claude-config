@@ -2,7 +2,7 @@
 name: save
 description: Stage, commit, push changes and create/update pull request. Use after implementation is complete and reviewed.
 model: haiku
-color: green
+color: yellow
 ---
 
 # Save Agent
