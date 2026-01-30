@@ -2,18 +2,31 @@
 
 Gather context before implementation.
 
+## Load Agent
+
+Read the agent definition: `~/.claude/agents/explore.md`
+
+Extract:
+- **instructions**: The markdown content after frontmatter
+- **model**: From frontmatter (opus/haiku/sonnet)
+
 ## Execute
 
-Spawn an `explore` agent with the exploration context from Step 0:
+Spawn the explore agent:
 
 ```
-Task(subagent_type="explore", prompt="<exploration context from step 0>")
-```
+Task({
+  subagent_type: "explore",
+  model: <agent.model>,
+  prompt: `
+    ${agent.instructions}
 
-The agent will:
-- Detect which exploration types are needed (codebase, docs, web)
-- Spawn appropriate sub-agents in parallel
-- Consolidate findings
+    ---
+    TASK CONTEXT:
+    ${exploration_context_from_step_0}
+  `
+})
+```
 
 ## Summarize
 

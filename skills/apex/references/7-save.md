@@ -2,9 +2,17 @@
 
 Commit and create PR.
 
+## Load Agent
+
+Read the agent definition: `~/.claude/agents/save.md`
+
+Extract:
+- **instructions**: The markdown content after frontmatter
+- **model**: From frontmatter (opus/haiku/sonnet)
+
 ## Execute
 
-Run `save` agent to:
+Run save agent to:
 - Stage and commit changes
 - Push to remote
 - Create or update PR
@@ -12,9 +20,12 @@ Run `save` agent to:
 ```javascript
 Task({
   subagent_type: "save",
+  model: agent.model,
   prompt: `
-    Save the implementation.
+    ${agent.instructions}
 
+    ---
+    SAVE CONTEXT:
     Summary of changes:
     - <list of completed subtasks>
 

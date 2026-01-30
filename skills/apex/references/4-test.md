@@ -2,17 +2,30 @@
 
 Verify implementation works.
 
+## Load Agent
+
+Read the agent definition: `~/.claude/agents/test.md`
+
+Extract:
+- **instructions**: The markdown content after frontmatter
+- **model**: From frontmatter (opus/haiku/sonnet)
+
 ## Execute
 
-Run `test` agent with mode based on flags:
+Run test agent with mode based on flags:
 - `-at`: automated testing
 - Default: manual user verification
 
 ```javascript
 Task({
   subagent_type: "test",
+  model: agent.model,
   prompt: `
-    Test the implementation. Mode: ${flags.at ? 'automated' : 'manual'}
+    ${agent.instructions}
+
+    ---
+    TEST CONTEXT:
+    Mode: ${flags.at ? 'automated' : 'manual'}
 
     Changes made:
     - <list of implemented subtasks>
