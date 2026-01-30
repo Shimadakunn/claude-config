@@ -1,65 +1,131 @@
 # Review Phase
 
-Comprehensive code review through parallel specialized agents.
+Review implemented code through 4 parallel review agents, then consolidate and present findings.
 
-## Launch 4 Review Agents
-
-Send in a single message to run in parallel:
+## Task Tracking
 
 ```
-Task 1 (subagent_type: review-correctness):
-Review for correctness: logic errors, edge cases, error handling
-Files: [list modified files]
-
-Task 2 (subagent_type: review-security):
-Review for security: OWASP vulnerabilities, input validation, auth issues
-Files: [list modified files]
-
-Task 3 (subagent_type: review-performance):
-Review for performance: inefficiencies, resource usage, scalability
-Files: [list modified files]
-
-Task 4 (subagent_type: review-maintainability):
-Review for maintainability: clarity, consistency, patterns, documentation
-Files: [list modified files]
+TaskUpdate(taskId: "review", status: "in_progress")
 ```
 
-## Consolidation Protocol
+## Process
 
-After all reviews complete:
+### 1. Identify Files to Review
 
-1. **Collect findings** from each agent
-2. **Deduplicate** overlapping issues
-3. **Prioritize** by severity:
-   - Critical: Security vulnerabilities, data loss risks
-   - High: Logic errors, incorrect behavior
-   - Medium: Performance issues, missing edge cases
-   - Low: Style issues, minor improvements
+From the implementation summary, list all files created/modified:
+```
+FILES TO REVIEW:
+- src/auth/jwt.ts
+- src/middleware/auth.ts
+- src/types/user.ts
+```
 
-4. **Present summary** to user before resolving
+### 2. Spawn 4 Review Agents in Parallel
 
-## Review Focus Areas
+Launch all in a **single message**:
 
-### Correctness
-- Logic flows correctly
-- Edge cases handled
-- Errors caught and handled
-- Types are correct
+```
+Task(subagent_type=review-correctness, description="Correctness review"):
+"FILES TO REVIEW:
+[list of files]
 
-### Security
-- No injection vulnerabilities
-- Input validation present
-- Auth/authz implemented correctly
-- Secrets not exposed
+FEATURE CONTEXT:
+[Brief description of what was implemented]
 
-### Performance
-- No unnecessary operations
-- Efficient algorithms
-- Resources cleaned up
-- Caching where appropriate
+Review for logic errors, edge cases, and error handling."
 
-### Maintainability
-- Code is readable
-- Follows project conventions
-- Appropriate abstraction level
-- No code duplication
+Task(subagent_type=review-security, description="Security review"):
+"FILES TO REVIEW:
+[list of files]
+
+FEATURE CONTEXT:
+[Brief description of what was implemented]
+
+Review for OWASP vulnerabilities, input validation, and auth issues."
+
+Task(subagent_type=review-performance, description="Performance review"):
+"FILES TO REVIEW:
+[list of files]
+
+FEATURE CONTEXT:
+[Brief description of what was implemented]
+
+Review for inefficiencies, N+1 queries, and resource usage."
+
+Task(subagent_type=review-maintainability, description="Maintainability review"):
+"FILES TO REVIEW:
+[list of files]
+
+FEATURE CONTEXT:
+[Brief description of what was implemented]
+
+Review for clarity, consistency, and patterns."
+```
+
+### 3. Gather and Deduplicate Findings
+
+After all agents complete:
+
+1. **Collect** findings from each agent
+2. **Deduplicate** - same issue reported by multiple agents
+3. **Merge** related findings into single items
+4. **Sort** by severity: Critical → High → Medium → Low
+
+### 4. Present Consolidated Review
+
+Display to user:
+
+```markdown
+## Code Review Summary
+
+### Critical Issues (must fix)
+- [file:line] **[Type]** Issue description
+  - Problem: Why it's an issue
+  - Fix: How to resolve
+
+### High Priority
+- [file:line] **[Type]** Issue description
+  - Problem: Why it's an issue
+  - Fix: How to resolve
+
+### Medium Priority
+- ...
+
+### Low Priority (optional)
+- ...
+
+### No Issues Found
+- [Category]: ✓ Passed
+```
+
+### 5. Determine Next Step
+
+**If Critical or High issues found:**
+→ Proceed to Resolve phase (6-resolve.md)
+
+**If only Medium/Low or no issues:**
+→ Ask user if they want to fix or proceed to Save phase
+
+```
+AskUserQuestion:
+  question: "Review found [N] medium/low issues. How to proceed?"
+  header: "Review"
+  options:
+    - label: "Fix issues"
+      description: "Resolve the findings before saving"
+    - label: "Skip and save"
+      description: "Accept as-is and proceed to commit"
+```
+
+## Completion
+
+```
+TaskUpdate(taskId: "review", status: "completed", description: "[N] issues found")
+```
+
+## Skip When
+
+- Trivial changes (typos, comments only)
+- User explicitly requests skipping review
+
+If skipping: `TaskUpdate(taskId: "review", status: "completed", description: "Skipped: [reason]")`

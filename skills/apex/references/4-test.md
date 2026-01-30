@@ -1,48 +1,104 @@
 # Test Phase
 
-Verify the implementation works before formal review.
+Summarize implementation and verify with user before review.
 
-## User Validation
-
-Use `AskUserQuestion` to confirm the feature works:
+## Task Tracking
 
 ```
-Question: "Does the [feature] work as expected?"
-Options:
-- "Yes, works correctly" → Proceed to Review
-- "Partially works" → Ask what's broken, fix, re-test
-- "No, doesn't work" → Debug and fix issues
+TaskUpdate(taskId: "test", status: "in_progress")
 ```
 
-## Testing Approaches
+## Process
 
-### 1. Manual Testing (Default)
-Ask the user to test the feature manually:
-- Provide clear steps to test
-- Specify expected behavior
-- Ask for confirmation
+### 1. Summarize Implementation
 
-### 2. Automated Testing
-If the codebase has tests, use the `test` subagent:
+Collect outputs from all implement agents and present:
+
+```markdown
+## Implementation Summary
+
+### Files Created/Modified
+- `path/file.ts` - [What was done]
+- `path/file.ts` - [What was done]
+
+### Key Changes
+- [Feature/component implemented]
+- [Feature/component implemented]
+
+### Implementation Decisions
+- [Decision made by agents]
+
+### Notes/Concerns
+- [Any concerns flagged by agents]
 ```
-Task (subagent_type: test):
-- Run existing test suite
-- Verify no regressions
-- Check new functionality
+
+### 2. Ask User to Verify
+
+Use `AskUserQuestion` to check if implementation works:
+
+```
+AskUserQuestion:
+  question: "Does [feature] work as expected?"
+  header: "Verify"
+  options:
+    - label: "Yes, works correctly"
+      description: "Implementation is complete and functional"
+    - label: "Partially works"
+      description: "Some issues need fixing"
+    - label: "No, doesn't work"
+      description: "Major issues, needs debugging"
 ```
 
-### 3. Browser Testing
-For frontend changes, use `agent-browser` skill:
-- Navigate to the feature
-- Interact with UI elements
-- Capture screenshots for verification
+### 3. Handle Response
 
-## Iteration
+**"Yes, works correctly"** → Proceed to Review phase
 
-If testing reveals issues:
-1. Identify the root cause
-2. Fix the specific issue
-3. Re-test only the affected functionality
-4. Confirm fix with user
+**"Partially works"** →
+1. Ask user what's not working
+2. Spawn implement agent to fix specific issue
+3. Re-test with user
 
-Do not proceed to Review until testing passes.
+**"No, doesn't work"** →
+1. Ask user for error details or behavior observed
+2. Debug and identify root cause
+3. Spawn implement agent to fix
+4. Re-test with user
+
+## Loop Until Pass
+
+```
+┌─────────────────────────────┐
+│  Summarize Implementation   │
+└──────────────┬──────────────┘
+               ▼
+┌─────────────────────────────┐
+│  AskUserQuestion: Works?    │
+└──────────────┬──────────────┘
+               │
+    ┌──────────┼──────────┐
+    ▼          ▼          ▼
+   Yes      Partial       No
+    │          │          │
+    │          ▼          ▼
+    │     Fix issue   Debug & fix
+    │          │          │
+    │          └────┬─────┘
+    │               ▼
+    │         Re-test (loop)
+    ▼
+Review Phase
+```
+
+## Completion
+
+```
+TaskUpdate(taskId: "test", status: "completed")
+```
+
+**Do not proceed to Review until user confirms working.**
+
+## Skip When
+
+- Non-functional changes (docs, config)
+
+If skipping: `TaskUpdate(taskId: "test", status: "completed", description: "Skipped: [reason]")`

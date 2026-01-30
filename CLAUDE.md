@@ -26,3 +26,7 @@
 # Tools
 
 - Use `AskUserQuestion` when you need user input.
+
+# Graphical Output
+
+Whenever you need to expose to user, use graphical output.

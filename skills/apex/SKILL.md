@@ -1,81 +1,85 @@
 ---
 name: apex
 description: Systematic implementation workflow using APEX methodology (Analyze-Plan-Execute-eXamine). Use when implementing features, fixing bugs, refactoring code, or making any code changes. Triggers on requests like "implement", "build", "create", "add", "fix", "refactor", or when user invokes /apex. Orchestrates parallel exploration, planning, implementation, testing, review, and git operations.
+disable-model-invocation: true
 ---
 
 # APEX Workflow
 
-Complete coding workflow: **Explore → Plan → Implement → Test → Review → Resolve → Save**
+**Explore → Plan → Implement → Test → Review → Resolve → Save**
 
-## Workflow Phases
+## Initialization
 
-| Phase | Purpose | Parallelization |
-|-------|---------|-----------------|
-| 1. Explore | Gather context from codebase, docs, web | Parallel agents |
-| 2. Plan | Design implementation approach | Sequential |
-| 3. Implement | Write the code | Parallel agents |
-| 4. Test | Verify feature works | User validation |
-| 5. Review | Check quality (4 dimensions) | Parallel agents |
-| 6. Resolve | Fix review findings | Parallel agents |
-| 7. Save | Commit, push, create PR | Sequential |
+At workflow start:
 
-## Phase Details
+1. **Record start time**: Note when workflow began
+2. **Create tasks** with `TaskCreate`:
 
-Each phase has a dedicated reference file. Read the relevant file before executing each phase.
+```
+TaskCreate: "Explore: Gather context"
+TaskCreate: "Plan: Design approach"
+TaskCreate: "Implement: Write code"
+TaskCreate: "Test: Verify functionality"
+TaskCreate: "Review: Check quality"
+TaskCreate: "Resolve: Fix findings"
+TaskCreate: "Save: Commit and PR"
+```
 
-### 1. Explore
-Read [references/1-explore.md](references/1-explore.md) for exploration strategy.
+## Phase Execution
 
-Launch parallel Task agents to gather context:
-- **Codebase exploration**: Find relevant files, patterns, dependencies
-- **Documentation lookup**: Query Context7 for library docs
-- **Web research**: Search for solutions, best practices
+For each phase:
+1. `TaskUpdate` → status: `in_progress`
+2. Read the reference file
+3. Execute the phase
+4. `TaskUpdate` → status: `completed`
 
-Consolidate findings before proceeding.
+| Phase        | Reference                                              | When to Skip                |
+| ------------ | ------------------------------------------------------ | --------------------------- |
+| 1. Explore   | [references/1-explore.md](references/1-explore.md)     | Trivial task, context known |
+| 2. Plan      | [references/2-plan.md](references/2-plan.md)           | Single-file obvious change  |
+| 3. Implement | [references/3-implement.md](references/3-implement.md) | Never                       |
+| 4. Test      | [references/4-test.md](references/4-test.md)           | Non-functional changes      |
+| 5. Review    | [references/5-review.md](references/5-review.md)       | Trivial changes             |
+| 6. Resolve   | [references/6-resolve.md](references/6-resolve.md)     | No issues found             |
+| 7. Save      | [references/7-save.md](references/7-save.md)           | User wants to continue      |
 
-### 2. Plan
-Read [references/2-plan.md](references/2-plan.md) for planning approach.
+## Agents Available
 
-Use `EnterPlanMode` or the Plan subagent to design the implementation. The plan should identify:
-- Files to modify/create
-- Key changes per file
-- Dependencies between changes
-- Potential risks
+| Agent        | Use For                                             |
+| ------------ | --------------------------------------------------- |
+| `explore`    | Codebase, documentation, or web research (parallel) |
+| `plan`       | Synthesize findings, design implementation          |
+| `implement`  | Writing/modifying code                              |
+| `review-*`   | 4 parallel review dimensions                        |
+| `save`       | Git commit, push, PR                                |
 
-### 3. Implement
-Read [references/3-implement.md](references/3-implement.md) for implementation strategy.
+## Parallelization Rule
 
-Execute the plan using parallel Task agents when changes are independent. Group by:
-- File boundaries
-- Feature boundaries
-- Layer boundaries (frontend/backend)
+Independent work → spawn agents in single message (parallel).
+Dependencies exist → sequential execution.
 
-### 4. Test
-Read [references/4-test.md](references/4-test.md) for testing approach.
+## Completion
 
-Ask the user to validate the feature works. Use `AskUserQuestion` to confirm functionality before proceeding to review.
+At workflow end:
 
-### 5. Review
-Read [references/5-review.md](references/5-review.md) for review protocol.
+1. **Calculate duration**: End time - start time
+2. **Display summary**:
 
-Launch 4 parallel review agents:
-- `review-correctness`: Logic, edge cases, error handling
-- `review-security`: OWASP vulnerabilities, input validation
-- `review-performance`: Efficiency, resource usage
-- `review-maintainability`: Clarity, consistency, patterns
+```markdown
+## APEX Complete
 
-Reviews exchange findings to avoid redundancy.
+**Feature**: [description]
+**Duration**: [time elapsed]
+**Files changed**: [count]
+**Commit**: [hash]
+**PR**: [URL if created]
 
-### 6. Resolve
-Read [references/6-resolve.md](references/6-resolve.md) for resolution strategy.
-
-Address review findings using parallel Task agents. Prioritize by severity:
-1. Security issues (critical)
-2. Correctness issues (high)
-3. Performance issues (medium)
-4. Maintainability issues (low)
-
-### 7. Save
-Read [references/7-save.md](references/7-save.md) for git operations.
-
-Commit changes, push to remote, create PR if none exists. Use the `save` subagent or follow git workflow manually.
+### Phases
+- Explore: [skipped/completed]
+- Plan: [skipped/completed]
+- Implement: completed
+- Test: [skipped/completed]
+- Review: [skipped/completed] - [N issues found]
+- Resolve: [skipped/completed]
+- Save: [skipped/completed]
+```

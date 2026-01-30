@@ -1,68 +1,87 @@
 # Save Phase
 
-Commit changes, push to remote, and create PR.
+Commit changes and create PR using the `save` agent.
 
-## Git Workflow
+## Task Tracking
 
-### 1. Stage Changes
-```bash
-git status  # Review changes
-git add <specific files>  # Stage relevant files only
+```
+TaskUpdate(taskId: "save", status: "in_progress")
 ```
 
-Avoid `git add -A` - be explicit about what's committed.
+## Process
 
-### 2. Commit
-Create a descriptive commit message:
-```bash
-git commit -m "$(cat <<'EOF'
+### 1. Prepare Context
+
+Gather from previous phases:
+- **Feature**: What was implemented
+- **Files changed**: List from implementation
+- **Key changes**: Summary of what was done
+
+### 2. Spawn Save Agent
+
+```
+Task(subagent_type=save, description="Commit and create PR"):
+"FEATURE: [feature description]
+
+FILES CHANGED:
+- path/file.ts - [what was done]
+- path/file.ts - [what was done]
+
+SUMMARY:
+[Brief description of changes for commit message]
+
+Commit the changes, push to remote, and create a pull request."
+```
+
+### 3. Save Agent Actions
+
+The save agent will:
+
+1. **Preview** - Run `git status` and `git diff`
+2. **Generate** - Create commit message from changes
+3. **Confirm** - Ask user to approve with `AskUserQuestion`
+4. **Stage** - Add specific files (not `git add -A`)
+5. **Commit** - With approved message
+6. **Push** - To remote with `-u` flag
+7. **PR** - Create pull request if none exists
+
+### 4. Output
+
+Save agent returns:
+- Commit hash
+- PR URL (if created)
+- Any issues encountered
+
+## Commit Message Format
+
+```
 <type>: <short description>
 
 <optional body explaining why>
-EOF
-)"
 ```
 
 Types: `feat`, `fix`, `refactor`, `test`, `docs`, `chore`
 
-### 3. Push
-```bash
-git push -u origin <branch>
-```
+## PR Format
 
-### 4. Create PR (if none exists)
-
-Check for existing PR:
-```bash
-gh pr list --head $(git branch --show-current)
-```
-
-Create PR if needed:
-```bash
-gh pr create --title "<title>" --body "$(cat <<'EOF'
+```markdown
 ## Summary
-- <bullet points>
+- <bullet points of changes>
 
 ## Test plan
 - [ ] <testing steps>
-
-EOF
-)"
 ```
 
-## Using Save Subagent
-
-Alternatively, spawn the save subagent:
+## Completion
 
 ```
-Task (subagent_type: save):
-Commit, push, and create PR for the changes.
-Summary: <brief description of changes>
+TaskUpdate(taskId: "save", status: "completed", description: "Committed: [hash]")
 ```
 
-## PR Guidelines
+## Skip When
 
-- Title: Short, imperative (e.g., "Add user authentication")
-- Summary: Bullet points of key changes
-- Test plan: How to verify the changes work
-- Keep PR focused on single feature/fix
+- User wants to continue working
+- Changes are work-in-progress
+- User explicitly requests not to commit
+
+If skipping: `TaskUpdate(taskId: "save", status: "completed", description: "Skipped: [reason]")`

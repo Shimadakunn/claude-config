@@ -1,60 +1,129 @@
 # Implement Phase
 
-Execute the plan through parallel implementation.
+Take the plan from the Plan phase and execute through parallel `implement` agents.
 
-## Parallelization Strategy
-
-Identify independent work units and spawn parallel Task agents:
-
-### Parallel When:
-- Files have no dependencies on each other
-- Changes are to separate modules/layers
-- Tests can be written alongside implementation
-
-### Sequential When:
-- One file imports from another being created
-- Schema changes must precede code using them
-- Configuration must exist before dependent code
-
-## Task Structure
-
-For each parallel work unit, spawn a Task with `subagent_type: implement`:
+## Task Tracking
 
 ```
-Task: Implement [component name]
-Files: [list of files]
-Requirements:
-- [specific requirement 1]
-- [specific requirement 2]
-Follow patterns from: [reference file or existing code]
+TaskUpdate(taskId: "implement", status: "in_progress")
+```
+
+## Process
+
+### 1. Parse the Plan
+
+From the plan output, extract:
+
+- **Changes table**: Files to create/modify
+- **Implementation Order**: Which steps can parallelize
+- **Decisions**: Technology choices to follow
+- **Patterns**: Conventions identified in exploration
+
+### 2. Group Parallelizable Tasks
+
+Analyze the Implementation Order section to identify:
+
+**Parallel when:**
+- Files have no imports between them
+- Separate modules/layers
+- Independent features
+- Plan marks as "can parallelize with X"
+
+**Sequential when:**
+- One file imports from another being created
+- Plan marks as "depends on step X"
+- Schema/types before code using them
+- Config before dependent code
+
+### 3. Spawn Parallel Implement Agents
+
+Launch all independent tasks in a **single message**:
+
+```
+Task(subagent_type=implement, description="[Component name]"):
+"TASK: [What to implement]
+
+FILES:
+- path/file.ts - Create/Modify
+
+REQUIREMENTS:
+- [Requirement from plan]
+- [Requirement from plan]
+
+PATTERNS TO FOLLOW:
+- [Pattern from exploration]
+- [Convention to match]
+
+CONTEXT:
+[Relevant exploration findings for this task]"
+```
+
+### 4. Handle Sequential Dependencies
+
+After parallel batch completes, spawn next batch that depended on them:
+
+```
+# After parallel tasks complete...
+
+Task(subagent_type=implement, description="[Dependent component]"):
+"TASK: [What to implement]
+
+DEPENDS ON: [What was just completed]
+
+FILES:
+- path/file.ts - Create/Modify
+
+REQUIREMENTS:
+- [Requirements]
+
+IMPORTS FROM:
+- [Files created in previous batch]"
 ```
 
 ## Example
 
-For authentication implementation:
-
+Given plan with Implementation Order:
 ```
-# Send in single message for parallelization
-
-Task 1 (implement): Create JWT utilities
-- File: src/auth/jwt.ts
-- Requirements: sign, verify, decode functions
-- Use jose library
-
-Task 2 (implement): Create User types
-- File: src/types/user.ts
-- Requirements: User interface with id, email, role
-
-Task 3 (implement): Create auth middleware
-- File: src/middleware/auth.ts
-- Requirements: Verify JWT, attach user to request
-- Depends on: jwt.ts pattern (describe pattern inline)
+1. JWT utilities - can parallelize with 2
+2. User types - can parallelize with 1
+3. Auth middleware - depends on 1, 2
 ```
 
-## Quality During Implementation
+**Batch 1** (single message, parallel):
+```
+Task(subagent_type=implement, description="JWT utilities"):
+"TASK: Create JWT sign/verify utilities
+FILES: src/auth/jwt.ts - Create
+REQUIREMENTS: sign, verify, decode functions using jose library
+PATTERNS: Match existing utility patterns"
+
+Task(subagent_type=implement, description="User types"):
+"TASK: Create User type definitions
+FILES: src/types/user.ts - Create
+REQUIREMENTS: User interface with id, email, role, timestamps"
+```
+
+**Batch 2** (after batch 1 completes):
+```
+Task(subagent_type=implement, description="Auth middleware"):
+"TASK: Create authentication middleware
+FILES: src/middleware/auth.ts - Create
+DEPENDS ON: JWT utilities, User types
+REQUIREMENTS: Verify JWT from header, attach user to request
+IMPORTS FROM: src/auth/jwt.ts, src/types/user.ts"
+```
+
+## Completion
+
+```
+TaskUpdate(taskId: "implement", status: "completed")
+```
+
+## Quality Checks
 
 Each implement agent should:
-- Follow existing code patterns
-- Add appropriate error handling
+- Follow existing patterns from exploration
+- Handle errors appropriately
 - Avoid over-engineering
-- Keep changes minimal and focused
+- Stay focused on task requirements
+- Not modify files outside its scope

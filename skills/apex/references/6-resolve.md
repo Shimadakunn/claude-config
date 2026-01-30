@@ -1,54 +1,133 @@
 # Resolve Phase
 
-Address review findings systematically.
+Fix review findings using `implement` agents.
 
-## Prioritization
-
-Fix issues in severity order:
-
-1. **Critical** (Security): Fix immediately, all security issues
-2. **High** (Correctness): Fix logic errors, broken functionality
-3. **Medium** (Performance): Fix inefficiencies, resource issues
-4. **Low** (Maintainability): Fix if time permits, or note for future
-
-## Parallelization Strategy
-
-Group independent fixes and resolve in parallel:
+## Task Tracking
 
 ```
-Task 1 (implement): Fix security issues
-- Issue: SQL injection in user query
-- Issue: Missing input sanitization
-Files: [affected files]
-
-Task 2 (implement): Fix correctness issues
-- Issue: Off-by-one error in pagination
-- Issue: Missing null check
-Files: [affected files]
-
-Task 3 (implement): Fix performance issues
-- Issue: N+1 query in user list
-- Issue: Unnecessary re-renders
-Files: [affected files]
+TaskUpdate(taskId: "resolve", status: "in_progress")
 ```
 
-## Resolution Guidelines
+## Process
 
-- Fix the specific issue, avoid scope creep
-- Maintain existing patterns
-- Add tests for bugs fixed
-- Document non-obvious fixes with brief comments
+### 1. Parse Review Findings
 
-## Verification
+From the consolidated review, extract issues to fix:
 
-After resolving:
-1. Re-run affected tests
-2. Spot-check critical fixes
-3. Confirm no regressions
+```
+ISSUES TO RESOLVE:
 
-If new issues arise during resolution, log them but complete current fixes first.
+Critical:
+- [file:line] Issue description → Fix approach
 
-## Skip Conditions
+High:
+- [file:line] Issue description → Fix approach
 
-- Skip resolution if review found no issues
-- Skip low-priority issues if explicitly deprioritized by user
+Medium:
+- [file:line] Issue description → Fix approach
+```
+
+### 2. Group by Parallelization
+
+**Parallel when:**
+- Issues in different files
+- Independent fixes in same file
+
+**Sequential when:**
+- One fix depends on another
+- Same code section affected
+
+### 3. Spawn Implement Agents
+
+Launch parallel fixes in **single message**:
+
+```
+Task(subagent_type=implement, description="Fix [issue type]"):
+"TASK: Fix review findings
+
+ISSUES TO FIX:
+1. [file:line] Issue description
+   - Problem: [why it's an issue]
+   - Fix: [how to resolve]
+
+2. [file:line] Issue description
+   - Problem: [why it's an issue]
+   - Fix: [how to resolve]
+
+FILES:
+- path/file.ts
+
+REQUIREMENTS:
+- Fix the specific issues identified
+- Do not change unrelated code
+- Maintain existing patterns"
+```
+
+### 4. Example
+
+Given review findings:
+```
+Critical:
+- src/auth/jwt.ts:42 - SQL injection in query
+
+High:
+- src/middleware/auth.ts:15 - Missing null check
+- src/types/user.ts:8 - Incorrect type definition
+
+Medium:
+- src/auth/jwt.ts:60 - N+1 query pattern
+```
+
+**Spawn parallel** (different files):
+
+```
+Task(subagent_type=implement, description="Fix jwt.ts issues"):
+"TASK: Fix review findings in jwt.ts
+
+ISSUES TO FIX:
+1. [line 42] SQL injection - use parameterized query
+2. [line 60] N+1 query - batch the queries
+
+FILES: src/auth/jwt.ts"
+
+Task(subagent_type=implement, description="Fix auth.ts issues"):
+"TASK: Fix review findings in auth.ts
+
+ISSUES TO FIX:
+1. [line 15] Missing null check - add guard clause
+
+FILES: src/middleware/auth.ts"
+
+Task(subagent_type=implement, description="Fix user.ts issues"):
+"TASK: Fix review findings in user.ts
+
+ISSUES TO FIX:
+1. [line 8] Incorrect type - fix type definition
+
+FILES: src/types/user.ts"
+```
+
+### 5. Verify Fixes
+
+After implement agents complete:
+
+1. **Summarize** what was fixed
+2. **Confirm** each issue was addressed
+3. **Check** for any new issues introduced
+
+### 6. Proceed to Save
+
+Once all issues resolved → Proceed to Save phase (7-save.md)
+
+## Completion
+
+```
+TaskUpdate(taskId: "resolve", status: "completed", description: "[N] issues fixed")
+```
+
+## Skip When
+
+- Review found no issues
+- Only low-priority issues and user chose to skip
+
+If skipping: `TaskUpdate(taskId: "resolve", status: "completed", description: "Skipped: no issues")`

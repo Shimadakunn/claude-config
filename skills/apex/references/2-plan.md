@@ -1,56 +1,63 @@
 # Plan Phase
 
-Design a clear implementation approach before writing code.
+Synthesize exploration findings and design implementation approach using the `plan` agent.
 
-## Approach
+## Task Tracking
 
-Use `EnterPlanMode` or spawn a Plan subagent to create the implementation design.
-
-## Plan Structure
-
-The plan should cover:
-
-### 1. Changes Overview
-- List all files to modify/create
-- Describe the purpose of each change
-
-### 2. Implementation Order
-- Sequence changes by dependency
-- Identify which changes can be parallelized
-
-### 3. Key Decisions
-- Technology/pattern choices
-- Trade-offs considered
-- Rationale for approach
-
-### 4. Risk Assessment
-- Breaking changes
-- Edge cases to handle
-- Testing requirements
-
-## Example Plan
-
-```markdown
-## Changes
-1. `src/auth/jwt.ts` - Create JWT utility functions
-2. `src/middleware/auth.ts` - Add authentication middleware
-3. `src/routes/protected.ts` - Apply middleware to routes
-4. `src/types/user.ts` - Add User interface
-
-## Order
-- Step 1-2 can be parallelized (no dependencies)
-- Step 3 depends on Step 2
-- Step 4 can run with any step
-
-## Decisions
-- Using jose library for JWT (modern, TypeScript-native)
-- Middleware pattern matches existing route handlers
-
-## Risks
-- Token expiration handling needs edge case testing
-- Need to verify compatibility with existing session system
+```
+TaskUpdate(taskId: "plan", status: "in_progress")
 ```
 
-## User Approval
+## Process
 
-Present the plan to the user. Use `ExitPlanMode` or ask for confirmation before proceeding to implementation.
+### 1. Spawn Plan Agent
+
+Pass the exploration findings to the plan agent:
+
+```
+Task(subagent_type=plan, description="Design implementation plan"):
+"EXPLORATION FINDINGS:
+[Paste synthesized findings from explore phase]
+
+FEATURE: [feature description]
+
+USER REQUIREMENTS:
+[Any specific requirements from user]
+
+Design an implementation plan that:
+1. Synthesizes the exploration context
+2. Identifies files to create/modify
+3. Sequences work by dependencies
+4. Documents key decisions and risks"
+```
+
+### 2. Plan Agent Output
+
+The plan agent (in plan mode) will return:
+
+- **Summary**: Overview of what will be implemented
+- **Changes**: Files to create/modify with purposes
+- **Implementation Order**: Sequenced steps with parallelization notes
+- **Decisions**: Technology choices with rationale
+- **Risks**: Potential issues with mitigations
+- **Test Plan**: Verification checklist
+
+### 3. Pass to Implement Phase
+
+Take the plan output and pass it to the Implement phase (3-implement.md).
+
+The plan provides the structure for spawning parallel implementation agents.
+
+## Completion
+
+```
+TaskUpdate(taskId: "plan", status: "completed")
+```
+
+## Skip When
+
+- Single-file obvious change
+- User provides explicit instructions
+- Continuation of existing work
+
+If skipping: `TaskUpdate(taskId: "plan", status: "completed", description: "Skipped: [reason]")`

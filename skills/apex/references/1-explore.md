@@ -1,49 +1,98 @@
 # Explore Phase
 
-Gather comprehensive context through parallel exploration.
+Gather context by spawning parallel `explore` agents for codebase, documentation, and web research.
 
-## Strategy
-
-Launch 3 parallel Task agents in a single message:
+## Task Tracking
 
 ```
-Task 1: Codebase Exploration (subagent_type: Explore)
-- Find files related to the feature area
-- Identify existing patterns and conventions
-- Map dependencies and integrations
-- Note test patterns used
-
-Task 2: Documentation Lookup (subagent_type: general-purpose)
-- Use Context7 MCP to query relevant library docs
-- Focus on APIs and patterns needed for implementation
-
-Task 3: Web Research (subagent_type: general-purpose)
-- Use Exa MCP for technical research
-- Search for best practices, common pitfalls
-- Find similar implementations for reference
+TaskUpdate(taskId: "explore", status: "in_progress")
 ```
 
-## Consolidation
+## Process
 
-After all agents complete, synthesize findings:
+### 1. Analyze What's Needed
 
-1. **Relevant files**: List files to read/modify with their purpose
-2. **Patterns**: Document conventions to follow
-3. **Dependencies**: Note libraries and their APIs
-4. **Risks**: Flag potential issues discovered
+From the feature and user request, determine which explorations to run:
 
-## Example
+| Source | Spawn When | Skip When |
+|--------|------------|-----------|
+| **Codebase** | Modifying existing code, need patterns | Greenfield project |
+| **Documentation** | Using external libraries/APIs | No external deps |
+| **Web Research** | Best practices, new tech | Purely internal task |
 
-For "add user authentication":
+### 2. Spawn Parallel Agents
+
+Launch all needed agents in a **single message**:
+
+#### Codebase Agent
+```
+Task(subagent_type=explore, description="Codebase exploration"):
+"EXPLORATION TYPE: Codebase
+
+FEATURE: [feature description]
+
+Find:
+- Related files and their purposes
+- Patterns and conventions used
+- Dependencies and imports
+- Potential integration points
+
+Output file:line references for key discoveries."
+```
+
+#### Documentation Agent
+```
+Task(subagent_type=explore, description="Documentation lookup"):
+"EXPLORATION TYPE: Documentation
+
+LIBRARIES: [library names from user request]
+FEATURE: [what we need from docs]
+
+Use Context7 MCP to query:
+- API methods needed
+- Usage patterns and examples
+- Configuration options
+- Known limitations
+
+Output code snippets where helpful."
+```
+
+#### Web Research Agent
+```
+Task(subagent_type=explore, description="Web research"):
+"EXPLORATION TYPE: Web Research
+
+TOPICS: [topics relevant to feature]
+
+Use Exa MCP to find:
+- Current best practices (2025+)
+- Common pitfalls to avoid
+- Performance considerations
+- Security recommendations
+
+Output source URLs for findings."
+```
+
+### 3. Synthesize Findings
+
+After all agents complete, combine into actionable context:
+
+- **Relevant files**: List with file:line and purpose
+- **Patterns to follow**: Conventions from the codebase
+- **API usage**: Key methods and examples from docs
+- **Best practices**: Recommendations from research
+- **Risks**: Potential issues and mitigations
+
+## Completion
 
 ```
-Agent 1 (Explore): Search for existing auth code, user models, middleware patterns
-Agent 2 (Context7): Query JWT library docs, session management
-Agent 3 (Exa): Research "secure authentication patterns Node.js 2025"
+TaskUpdate(taskId: "explore", status: "completed")
 ```
 
-## Skip Conditions
+## Skip When
 
-- Skip web research if the task is purely internal/codebase-specific
-- Skip docs lookup if no external libraries are involved
-- Skip codebase exploration only for greenfield projects
+- Trivial change with known context
+- User explicitly provides all needed context
+- Greenfield project with no external dependencies
+
+If skipping: `TaskUpdate(taskId: "explore", status: "completed", description: "Skipped: [reason]")`
